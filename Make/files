@@ -1,0 +1,13 @@
+compressibleTwoPhaseVoFMixtureC/compressibleTwoPhaseVoFMixtureC.C
+compressibleInterPhaseTransportModelC/compressibleInterPhaseTransportModelC.C
+compressibleInterPhaseThermophysicalTransportModelC/compressibleInterPhaseThermophysicalTransportModelC.C
+massDiffusivity/massDiffusivity.C
+
+compositionPredictor.C
+alphaSuSp.C
+momentumPredictor.C
+thermophysicalPredictor.C
+pressureCorrector.C
+compressibleVoFC.C
+
+LIB = $(FOAM_USER_LIBBIN)/libcompressibleVoFC

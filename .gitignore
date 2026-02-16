@@ -1,1 +1,6 @@
 fvModels/
+*.dep
+*.o
+Allwmake
+Allwclean
+lnInclude/

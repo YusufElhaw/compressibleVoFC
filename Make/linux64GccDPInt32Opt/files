@@ -1,0 +1,13 @@
+SOURCE += compressibleTwoPhaseVoFMixtureC/compressibleTwoPhaseVoFMixtureC.C
+SOURCE += compressibleInterPhaseTransportModelC/compressibleInterPhaseTransportModelC.C
+SOURCE += compressibleInterPhaseThermophysicalTransportModelC/compressibleInterPhaseThermophysicalTransportModelC.C
+SOURCE += massDiffusivity/massDiffusivity.C
+
+SOURCE += compositionPredictor.C
+SOURCE += alphaSuSp.C
+SOURCE += momentumPredictor.C
+SOURCE += thermophysicalPredictor.C
+SOURCE += pressureCorrector.C
+SOURCE += compressibleVoFC.C
+
+LIB = $(FOAM_USER_LIBBIN)/libcompressibleVoFC
