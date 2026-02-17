@@ -297,18 +297,24 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
       // Y1p1 and Y2p2 have all the Field their real Values
       // Y2p1 and Y1p2 have 1 in cells, where their phases does not exist, as a Dummy-value
       // Y2p1 and Y1p2 have in the rest of the cells their real values
-//  Rücksubstitution normal gemacht  //    Y1p1 = Y1p1_pure + Y1p1_mix ;                                 
-//  Rücksubstitution normal gemacht  //    Y2p1 = Y2p1_pure + Y2p1_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y2p1_pure in the mix cells 
-//  Rücksubstitution normal gemacht  //    Y1p2 = Y1p2_pure + Y1p2_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y1p2_pure in the mix cells
-//  Rücksubstitution normal gemacht  //    Y2p2 = Y2p2_pure + Y2p2_mix;                                  
+     Y1p1 = Y1p1_pure + Y1p1_mix ;                                 
+     Y2p1 = Y2p1_pure + Y2p1_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y2p1_pure in the mix cells 
+     Y1p2 = Y1p2_pure + Y1p2_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y1p2_pure in the mix cells
+     Y2p2 = Y2p2_pure + Y2p2_mix;                                  
 
           ///////////////////////
-          //neue Rücksubstitution
-          Y1p1=C1*W1/max((C1*W1+C2*W2),denomMin);
-          Y2p1=C2*W2/max((C1*W1+C2*W2),denomMin);
-          Y1p2=Y1p1;
-          Y2p2=Y2p1;
+          //neue Rücksubstitution mit_CP_Yip1_Yip2_gleich/
+      //    Y1p1=C1*W1/max((C1*W1+C2*W2),denomMin);
+      //    Y2p1=C2*W2/max((C1*W1+C2*W2),denomMin);
+      //    Y1p2=Y1p1;
+      //    Y2p2=Y2p1;
 
+          //    mit_CP_MassFractions_ForNoPhase_Y0/
+
+    //  Y1p1 = alpha1*C1*W1/max((C1*W1+C2*W2),denomMin);
+    //  Y2p1 = alpha1*C2*W2/max((C1*W1+C2*W2),denomMin);
+    //  Y1p2 = alpha2*C1*W1/max((C1*W1+C2*W2),denomMin);
+    //  Y2p2 = alpha2*C2*W2/max((C1*W1+C2*W2),denomMin);
           ///////////////////////
      // Info<<"the massfractions of Y1p1 are : "<<Y1p1<<nl<<endl;
      // Info<<"the massfractions of Y2p1 are : "<<Y2p1<<nl<<endl;
