@@ -36,7 +36,7 @@ License
 void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
 {
 
-
+/*
   const volScalarField& rho1(mixture.rho1());
   const volScalarField& rho2(mixture.rho2());
 
@@ -117,9 +117,9 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
       (e1Source&e1)
     + (e2Source&e2)
   );
+*/
 
-
-  /* original Equation of OpenFoam // good for pureMixture // bad for multicomponentMixture
+  // original Equation of OpenFoam // good for pureMixture // bad for multicomponentMixture
   const volScalarField& rho1(mixture.rho1());
   const volScalarField& rho2(mixture.rho2());
 
@@ -135,7 +135,7 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
   (
       correction
       (
-          mixture.thermo1().Cv()()
+          mixture.thermo1().Cp()()
           *(
               fvm::ddt(alpha1, rho1, T) + fvm::div(alphaRhoPhi1, T)
             - (
@@ -144,7 +144,7 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
                 : fvm::Sp(contErr1(), T)
               )
           )
-        + mixture.thermo2().Cv()()
+        + mixture.thermo2().Cp()()
           *(
               fvm::ddt(alpha2, rho2, T) + fvm::div(alphaRhoPhi2, T)
             - (
@@ -175,7 +175,7 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
       (e1Source&e1)
     + (e2Source&e2)
   );
-*/
+//
   TEqn.relax();
 
   fvConstraints().constrain(TEqn);
