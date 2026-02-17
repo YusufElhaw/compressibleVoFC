@@ -36,7 +36,7 @@ License
 void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
 {
 
-/*
+
   const volScalarField& rho1(mixture.rho1());
   const volScalarField& rho2(mixture.rho2());
 
@@ -49,50 +49,50 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
   volScalarField& T = mixture_.T();
 
   // Cv(T,p,Y...) from rhoFluidMulticomponentThermo -> variable field
-  const volScalarField Cv1(mixture.thermo1().Cv());
-  const volScalarField Cv2(mixture.thermo2().Cv());
+  const volScalarField Cp1(mixture.thermo1().Cp());
+  const volScalarField Cp2(mixture.thermo2().Cp());
 
   // Conservative coefficients (alpha*rho*Cv)
-  const volScalarField aRhoCv1("aRhoCv1", alpha1*rho1*Cv1);
-  const volScalarField aRhoCv2("aRhoCv2", alpha2*rho2*Cv2);
+  const volScalarField aRhoCp1("aRhoCp1", alpha1*rho1*Cp1);
+  const volScalarField aRhoCp2("aRhoCp2", alpha2*rho2*Cp2);
 
-  const Foam::upwind<scalar> upCv1(mesh, alphaRhoPhi1);
-  const Foam::upwind<scalar> upCv2(mesh, alphaRhoPhi2);
+  const Foam::upwind<scalar> upCp1(mesh, alphaRhoPhi1);
+  const Foam::upwind<scalar> upCp2(mesh, alphaRhoPhi2);
 
-  const surfaceScalarField Cv1f("Cv1f", upCv1.interpolate(Cv1));
-  const surfaceScalarField Cv2f("Cv2f", upCv2.interpolate(Cv2));
+  const surfaceScalarField Cp1f("Cp1f", upCp1.interpolate(Cp1));
+  const surfaceScalarField Cp2f("Cp2f", upCp2.interpolate(Cp2));
 
-  const surfaceScalarField aRhoCvPhi1("aRhoCvPhi1", Cv1f*alphaRhoPhi1);
-  const surfaceScalarField aRhoCvPhi2("aRhoCvPhi2", Cv2f*alphaRhoPhi2);
+  const surfaceScalarField aRhoCpPhi1("aRhoCpPhi1", Cp1f*alphaRhoPhi1);
+  const surfaceScalarField aRhoCpPhi2("aRhoCpPhi2", Cp2f*alphaRhoPhi2);
 
   // Product-rule correction:
   //  - T * [ ddt(alpha*rho*Cv) + div(alpha*rho*phi*Cv) ]
   // Implemented as -Sp( ddt(...) + div(...), T )
-  const volScalarField prodCorr1("prodCorr1", fvc::ddt(aRhoCv1) + fvc::div(aRhoCvPhi1));
-  const volScalarField prodCorr2("prodCorr2", fvc::ddt(aRhoCv2) + fvc::div(aRhoCvPhi2));
+  const volScalarField prodCorr1("prodCorr1", fvc::ddt(aRhoCp1) + fvc::div(aRhoCpPhi1));
+  const volScalarField prodCorr2("prodCorr2", fvc::ddt(aRhoCp2) + fvc::div(aRhoCpPhi2));
 
   fvScalarMatrix TEqn
   (
       correction
       (
           (
-              fvm::ddt(aRhoCv1, T)
-            + fvm::div(aRhoCvPhi1, T)
+              fvm::ddt(aRhoCp1, T)
+            + fvm::div(aRhoCpPhi1, T)
             - fvm::Sp(prodCorr1, T)              // <-- key fix
             - (
                   e1Source.hasDiag()
-                ? fvm::Sp(contErr1()*Cv1, T) + fvm::Sp(e1Source.A()*Cv1, T)
-                : fvm::Sp(contErr1()*Cv1, T)
+                ? fvm::Sp(contErr1()*Cp1, T) + fvm::Sp(e1Source.A()*Cp1, T)
+                : fvm::Sp(contErr1()*Cp1, T)
               )
           )
         + (
-              fvm::ddt(aRhoCv2, T)
-            + fvm::div(aRhoCvPhi2, T)
+              fvm::ddt(aRhoCp2, T)
+            + fvm::div(aRhoCpPhi2, T)
             - fvm::Sp(prodCorr2, T)              // <-- key fix
             - (
                   e2Source.hasDiag()
-                ? fvm::Sp(contErr2()*Cv2, T) + fvm::Sp(e2Source.A()*Cv2, T)
-                : fvm::Sp(contErr2()*Cv2, T)
+                ? fvm::Sp(contErr2()*Cp2, T) + fvm::Sp(e2Source.A()*Cp2, T)
+                : fvm::Sp(contErr2()*Cp2, T)
               )
           )
       )
@@ -117,8 +117,8 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
       (e1Source&e1)
     + (e2Source&e2)
   );
-*/
 
+/*
   // original Equation of OpenFoam // good for pureMixture // bad for multicomponentMixture
   const volScalarField& rho1(mixture.rho1());
   const volScalarField& rho2(mixture.rho2());
@@ -175,7 +175,7 @@ void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
       (e1Source&e1)
     + (e2Source&e2)
   );
-//
+*/
   TEqn.relax();
 
   fvConstraints().constrain(TEqn);
