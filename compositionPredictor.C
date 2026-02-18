@@ -296,7 +296,7 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
     // Piecewise assembly
       // Y1p1 and Y2p2 have all the Field their real Values
       // Y2p1 and Y1p2 have 1 in cells, where their phases does not exist, as a Dummy-value
-      // Y2p1 and Y1p2 have in the rest of the cells their real values
+     // Y2p1 and Y1p2 have in the rest of the cells their real values
      Y1p1 = Y1p1_pure + Y1p1_mix ;                                 
      Y2p1 = Y2p1_pure + Y2p1_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y2p1_pure in the mix cells 
      Y1p2 = Y1p2_pure + Y1p2_mix - Is_mix_Cell;      // subtraction of the Dummy 1 in the Y1p2_pure in the mix cells
@@ -304,10 +304,10 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
 
           ///////////////////////
           //neue Rücksubstitution mit_CP_Yip1_Yip2_gleich/
-      //    Y1p1=C1*W1/max((C1*W1+C2*W2),denomMin);
-      //    Y2p1=C2*W2/max((C1*W1+C2*W2),denomMin);
-      //    Y1p2=Y1p1;
-      //    Y2p2=Y2p1;
+        //  Y1p1=C1*W1/max((C1*W1+C2*W2),denomMin);
+        //  Y2p1=C2*W2/max((C1*W1+C2*W2),denomMin);
+        //  Y1p2=Y1p1;
+        //  Y2p2=Y2p1;
 
           //    mit_CP_MassFractions_ForNoPhase_Y0/
 
