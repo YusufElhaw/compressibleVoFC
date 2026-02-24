@@ -35,116 +35,72 @@ License
 
 void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
 {
-    compositionPredictor();
+  compositionPredictor();
 
     const volScalarField& rho1(mixture.rho1());
     const volScalarField& rho2(mixture.rho2());
 
-    const volScalarField& Cpv1(mixture.thermo1().Cpv());
-    const volScalarField& Cpv2(mixture.thermo2().Cpv());
+   // const volScalarField& Cpv1(mixture.thermo1().Cpv());
+   // const volScalarField& Cpv2(mixture.thermo2().Cpv());
 
-    const volScalarField rhoCpv1("rhoCpv1", rho1*Cpv1);
-    const volScalarField rhoCpv2("rhoCpv2", rho2*Cpv2);
 
-    const volScalarField rhoCpv("rhoCpv", alpha1*rhoCpv1+alpha2*rhoCpv2);
+    volScalarField& he1 = mixture_.thermo1().he();
+    volScalarField& he2 = mixture_.thermo2().he();
 
-    const surfaceScalarField alphaRhoCpvPhi1
+
+    const fvScalarMatrix e1Source(fvModels().source(alpha1, rho1, he1));
+    const fvScalarMatrix e2Source(fvModels().source(alpha2, rho2, he2));
+Info<< "Defintion of EEqn1"<<endl;
+
+    fvScalarMatrix  EEqn1
     (
-        "alphaRhoCpvPhi1",
-        fvc::interpolate(rhoCpv1)*alphaPhi1
-    );
+        fvm::ddt(alpha1, rho1, he1)
+      + fvm::div(alphaRhoPhi1, he1)
+      - fvm::Sp(contErr1, he1)
 
-    const surfaceScalarField alphaRhoCpvPhi2
-    (
-        "alphaRhoCpvPhi2",
-        fvc::interpolate(rhoCpv2)*alphaPhi2
-    );
+      + fvc::ddt(alpha1, rho1, K) 
+      + fvc::div(alphaRhoPhi1, K)
+      //- contErr1*K
 
-    const volScalarField& e1(mixture.thermo1().he());
-    const volScalarField& e2(mixture.thermo2().he());
-
-    const fvScalarMatrix e1Source(fvModels().source(alpha1, rho1, e1));
-    const fvScalarMatrix e2Source(fvModels().source(alpha2, rho2, e2));
-
-    contErrCpv1 =
-    (
-        fvc::ddt(alpha1, rho1,Cpv1)()() + fvc::div(alphaRhoCpvPhi1)()()
-      - (fvModels().source(alpha1, rho1,Cpv1)&rho1)()
-    );
-
-    contErrCpv2 =
-    (
-        fvc::ddt(alpha2, rho2,Cpv2)()() + fvc::div(alphaRhoCpvPhi2)()()
-      - (fvModels().source(alpha2, rho2,Cpv2)&rho2)()
-    );
-
-    volScalarField& T = mixture_.T();
-
-    fvScalarMatrix TEqn
-    (
-        correction
-        (
-           
-           (
-              fvm::ddt(alpha1, rhoCpv1, T) 
-            + fvm::div(alphaRhoCpvPhi1, T)
-          
-          - (
-                e1Source.hasDiag()
-              ? fvm::Sp(contErrCpv1(), T) + fvm::Sp(e1Source.A(), T)
-              : fvm::Sp(contErrCpv1(), T)
-            )  
-            )
-          +
-           (
-              fvm::ddt(alpha2, rhoCpv2, T) 
-            + fvm::div(alphaRhoCpvPhi2, T)
-        
-          - (
-                e2Source.hasDiag()
-              ? fvm::Sp(contErrCpv2(), T) + fvm::Sp(e2Source.A(), T)
-              : fvm::Sp(contErrCpv2(), T)
-            )
-          )
-        )
-
-      + fvc::ddt(alpha1, rho1, e1) + fvc::div(alphaRhoPhi1, e1)
-      - contErr1()*e1
-      + fvc::ddt(alpha2, rho2, e2) + fvc::div(alphaRhoPhi2, e2)
-      - contErr2()*e2
-
-      - fvm::laplacian(thermophysicalTransport.kappaEff(), T)
-
-      + (
-            mixture.totalInternalEnergy()
-          ?
-            fvc::div(fvc::absolute(phi, U), p)()()
-          + (fvc::ddt(rho, K) + fvc::div(rhoPhi, K))()()
-          - (U()&(fvModels().source(rho, U)&U)()) - (contErr1() + contErr2())*K
-          :
-            p*fvc::div(fvc::absolute(phi, U))()()
-        )
+      - thermophysicalTransport.divq(he1) 
      ==
-        (e1Source&e1)
-      + (e2Source&e2)
-    // all in one field 
-    // collapses for 2D first iteration : 0           300   6.81851e+17        1055.4  -6.46059e+14
-   //     fvm::ddt(rhoCpv, T)
-   //   + fvm::div(rhoCpvPhi, T)
-   //   - fvm::Sp(fvc::ddt(rhoCpv) + fvc::div(rhoCpvPhi), T)
-   //   == 
-   //   fvm::laplacian(thermophysicalTransport.kappaEff(), T)
-   //   + (e1Source&e1)
-   //   + (e2Source&e2)
+    e1Source
     );
+Info<< "Defintion of EEqn2"<<endl;
+    
+    fvScalarMatrix  EEqn2
+    (
+        fvm::ddt(alpha2, rho2, he2)
+      + fvm::div(alphaRhoPhi2, he2)
+      - fvm::Sp(contErr2, he2)
 
-    TEqn.relax();
+      + fvc::ddt(alpha2, rho2, K) 
+      + fvc::div(alphaRhoPhi2, K)
+      //- contErr2*K
 
-    fvConstraints().constrain(TEqn);
+      - thermophysicalTransport.divq(he2) 
+     ==
+    e2Source
+    );
+    
+    //  Relax/Constraints/Solve
 
-    TEqn.solve();
+    EEqn1.relax();
+    fvConstraints().constrain(EEqn1);
+    EEqn1.solve();
+    fvConstraints().constrain(he1);
+    Info<< "solved EEqn1"<<endl;
 
-    fvConstraints().constrain(T);
+    EEqn2.relax();
+    Info<< "realxed EEqn2"<<endl;
+    fvConstraints().constrain(EEqn2);
+    Info<< "fvConstraints().constrain EEqn2"<<endl;
+    EEqn2.solve();
+    Info<< "solved EEqn2"<<endl;
+    fvConstraints().constrain(he2);
+    Info<< "fvConstraints().constrain(he2); EEqn2"<<endl;
+
+    // thermo update
 
     mixture_.correctThermo();
     mixture_.correct();
