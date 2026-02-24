@@ -35,99 +35,119 @@ License
 
 void Foam::solvers::compressibleVoFC::thermophysicalPredictor()
 {
-  compositionPredictor();
+    compositionPredictor();
 
-  const volScalarField& rho1(mixture.rho1());
-  const volScalarField& rho2(mixture.rho2());
+    const volScalarField& rho1(mixture.rho1());
+    const volScalarField& rho2(mixture.rho2());
 
-  const volScalarField& e1(mixture.thermo1().he());
-  const volScalarField& e2(mixture.thermo2().he());
+    const volScalarField& Cpv1(mixture.thermo1().Cpv());
+    const volScalarField& Cpv2(mixture.thermo2().Cpv());
 
-  const fvScalarMatrix e1Source(fvModels().source(alpha1, rho1, e1));
-  const fvScalarMatrix e2Source(fvModels().source(alpha2, rho2, e2));
+    const volScalarField rhoCpv1("rhoCpv1", rho1*Cpv1);
+    const volScalarField rhoCpv2("rhoCpv2", rho2*Cpv2);
 
-  volScalarField& T = mixture_.T();
+    const volScalarField rhoCpv("rhoCpv", alpha1*rhoCpv1+alpha2*rhoCpv2);
 
-  // Cv(T,p,Y...) from rhoFluidMulticomponentThermo -> variable field
-  const volScalarField Cp1(mixture.thermo1().Cp());
-  const volScalarField Cp2(mixture.thermo2().Cp());
+    const surfaceScalarField alphaRhoCpvPhi1
+    (
+        "alphaRhoCpvPhi1",
+        fvc::interpolate(rhoCpv1)*alphaPhi1
+    );
 
-  // Conservative coefficients (alpha*rho*Cv)
-  const volScalarField aRhoCp1("aRhoCp1", alpha1*rho1*Cp1);
-  const volScalarField aRhoCp2("aRhoCp2", alpha2*rho2*Cp2);
+    const surfaceScalarField alphaRhoCpvPhi2
+    (
+        "alphaRhoCpvPhi2",
+        fvc::interpolate(rhoCpv2)*alphaPhi2
+    );
 
-  const Foam::upwind<scalar> upCp1(mesh, alphaRhoPhi1);
-  const Foam::upwind<scalar> upCp2(mesh, alphaRhoPhi2);
+    const volScalarField& e1(mixture.thermo1().he());
+    const volScalarField& e2(mixture.thermo2().he());
 
-  const surfaceScalarField Cp1f("Cp1f", upCp1.interpolate(Cp1));
-  const surfaceScalarField Cp2f("Cp2f", upCp2.interpolate(Cp2));
+    const fvScalarMatrix e1Source(fvModels().source(alpha1, rho1, e1));
+    const fvScalarMatrix e2Source(fvModels().source(alpha2, rho2, e2));
 
-  const surfaceScalarField aRhoCpPhi1("aRhoCpPhi1", Cp1f*alphaRhoPhi1);
-  const surfaceScalarField aRhoCpPhi2("aRhoCpPhi2", Cp2f*alphaRhoPhi2);
+    contErrCpv1 =
+    (
+        fvc::ddt(alpha1, rho1,Cpv1)()() + fvc::div(alphaRhoCpvPhi1)()()
+      - (fvModels().source(alpha1, rho1,Cpv1)&rho1)()
+    );
 
-  // Product-rule correction:
-  //  - T * [ ddt(alpha*rho*Cv) + div(alpha*rho*phi*Cv) ]
-  // Implemented as -Sp( ddt(...) + div(...), T )
-  const volScalarField prodCorr1("prodCorr1", fvc::ddt(aRhoCp1) + fvc::div(aRhoCpPhi1));
-  const volScalarField prodCorr2("prodCorr2", fvc::ddt(aRhoCp2) + fvc::div(aRhoCpPhi2));
+    contErrCpv2 =
+    (
+        fvc::ddt(alpha2, rho2,Cpv2)()() + fvc::div(alphaRhoCpvPhi2)()()
+      - (fvModels().source(alpha2, rho2,Cpv2)&rho2)()
+    );
 
-  fvScalarMatrix TEqn
-  (
-      correction
-      (
-          (
-              fvm::ddt(aRhoCp1, T)
-            + fvm::div(aRhoCpPhi1, T)
-            - fvm::Sp(prodCorr1, T)              // <-- key fix
-            - (
-                  e1Source.hasDiag()
-                ? fvm::Sp(contErr1()*Cp1, T) + fvm::Sp(e1Source.A()*Cp1, T)
-                : fvm::Sp(contErr1()*Cp1, T)
-              )
+    volScalarField& T = mixture_.T();
+
+    fvScalarMatrix TEqn
+    (
+        correction
+        (
+           
+           (
+              fvm::ddt(alpha1, rhoCpv1, T) 
+            + fvm::div(alphaRhoCpvPhi1, T)
+          
+          - (
+                e1Source.hasDiag()
+              ? fvm::Sp(contErrCpv1(), T) + fvm::Sp(e1Source.A(), T)
+              : fvm::Sp(contErrCpv1(), T)
+            )  
+            )
+          +
+           (
+              fvm::ddt(alpha2, rhoCpv2, T) 
+            + fvm::div(alphaRhoCpvPhi2, T)
+        
+          - (
+                e2Source.hasDiag()
+              ? fvm::Sp(contErrCpv2(), T) + fvm::Sp(e2Source.A(), T)
+              : fvm::Sp(contErrCpv2(), T)
+            )
           )
-        + (
-              fvm::ddt(aRhoCp2, T)
-            + fvm::div(aRhoCpPhi2, T)
-            - fvm::Sp(prodCorr2, T)              // <-- key fix
-            - (
-                  e2Source.hasDiag()
-                ? fvm::Sp(contErr2()*Cp2, T) + fvm::Sp(e2Source.A()*Cp2, T)
-                : fvm::Sp(contErr2()*Cp2, T)
-              )
-          )
-      )
+        )
 
-    + fvc::ddt(alpha1, rho1, e1) + fvc::div(alphaRhoPhi1, e1)
-    - contErr1()*e1
-    + fvc::ddt(alpha2, rho2, e2) + fvc::div(alphaRhoPhi2, e2)
-    - contErr2()*e2
+      + fvc::ddt(alpha1, rho1, e1) + fvc::div(alphaRhoPhi1, e1)
+      - contErr1()*e1
+      + fvc::ddt(alpha2, rho2, e2) + fvc::div(alphaRhoPhi2, e2)
+      - contErr2()*e2
 
-    - fvm::laplacian(thermophysicalTransport.kappaEff(), T)
+      - fvm::laplacian(thermophysicalTransport.kappaEff(), T)
 
-    + (
-          mixture.totalInternalEnergy()
-        ?
-          fvc::div(fvc::absolute(phi, U), p)()()
-        + (fvc::ddt(rho, K) + fvc::div(rhoPhi, K))()()
-        - (U()&(fvModels().source(rho, U)&U)()) - (contErr1() + contErr2())*K
-        :
-          p*fvc::div(fvc::absolute(phi, U))()()
-      )
-    ==
-      (e1Source&e1)
-    + (e2Source&e2)
-  );
+      + (
+            mixture.totalInternalEnergy()
+          ?
+            fvc::div(fvc::absolute(phi, U), p)()()
+          + (fvc::ddt(rho, K) + fvc::div(rhoPhi, K))()()
+          - (U()&(fvModels().source(rho, U)&U)()) - (contErr1() + contErr2())*K
+          :
+            p*fvc::div(fvc::absolute(phi, U))()()
+        )
+     ==
+        (e1Source&e1)
+      + (e2Source&e2)
+    // all in one field 
+    // collapses for 2D first iteration : 0           300   6.81851e+17        1055.4  -6.46059e+14
+   //     fvm::ddt(rhoCpv, T)
+   //   + fvm::div(rhoCpvPhi, T)
+   //   - fvm::Sp(fvc::ddt(rhoCpv) + fvc::div(rhoCpvPhi), T)
+   //   == 
+   //   fvm::laplacian(thermophysicalTransport.kappaEff(), T)
+   //   + (e1Source&e1)
+   //   + (e2Source&e2)
+    );
 
-  TEqn.relax();
+    TEqn.relax();
 
-  fvConstraints().constrain(TEqn);
+    fvConstraints().constrain(TEqn);
 
-  TEqn.solve();
+    TEqn.solve();
 
-  fvConstraints().constrain(T);
+    fvConstraints().constrain(T);
 
-  mixture_.correctThermo();
-  mixture_.correct();
+    mixture_.correctThermo();
+    mixture_.correct();
 }
 
 

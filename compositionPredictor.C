@@ -51,9 +51,9 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
   const dimensionedScalar W1 = mixture_.thermo1().Wi(0)/1e3;   // mol mass in kg
   const dimensionedScalar W2 = mixture_.thermo1().Wi(1)/1e3;   // mol mass in kg
 
-// VLE constant (READ_IF_PRESENT, Default = 1e-3)
-  const word K1Name = IOobject::groupName("K", mixture_.species1Name()); // "K.Benzol"
-  const word K2Name = IOobject::groupName("K", mixture_.species2Name()); // "K.Toluol"
+// VLE constant (READ_IF_PRESENT, Default = 1)
+  const word K1Name = IOobject::groupName("K", mixture_.species1Name()); 
+  const word K2Name = IOobject::groupName("K", mixture_.species2Name()); 
 
     volScalarField K1
     (
@@ -75,8 +75,7 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
           K2Name, 
           mesh.time().constant(), 
           mesh,
-          IOobject::READ_IF_PRESENT, 
-          IOobject::NO_WRITE
+          IOobject::READ_IF_PRESENT, IOobject::NO_WRITE
         ),
         mesh,
         dimensionedScalar("K", dimless, 1)
@@ -212,12 +211,11 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
 
 
 
-  // Diffusivity D_j (Start: alpha-gewichtet -erstamliger Wert) // to be changed
+  // Diffusivity Coeffecient
 
-    volScalarField tDEff =
-    thermophysicalTransport.DEff();
+    volScalarField tDEff = thermophysicalTransport.DEff();
 
-  // Solver for C-Equations
+  // Solve for C-Equations
     // Eq.10: Phi_j = -D * [ C(1-K)/(alpha1 + K*alpha2) ] grad(alpha1) // doi:10.1016/j.ces.2010.01.012
       volScalarField fraction1(C1*(scalar(1) - K1)/(ALPHA1 + K1*ALPHA2));
       volScalarField fraction2(C2*(scalar(1) - K2)/(ALPHA1 + K2*ALPHA2));
@@ -329,8 +327,8 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
    
   // Push mass-fractions into thermo objects + update derived properties
     mixture_.correctComposition();
-    mixture_.correctThermo();
-    mixture_.correct();
+   // mixture_.correctThermo();
+   // mixture_.correct();
 }
 
 

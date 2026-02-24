@@ -26,6 +26,8 @@ License
 #include "compressibleInterPhaseThermophysicalTransportModelC.H"
 #include "compressibleInterPhaseTransportModelC.H"
 #include "fvcSnGrad.H"
+#include "compressibleTwoPhaseVoFMixtureC.H"
+#include "fvmLaplacian.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -219,9 +221,79 @@ Foam::compressibleInterPhaseThermophysicalTransportModelC::divq
     volScalarField& he
 ) const
 {
-    NotImplemented;
+//    NotImplemented;
+//
+//    return tmp<fvScalarMatrix>(nullptr);
+    const compressibleTwoPhaseVoFMixtureC& mixture = momentumTransport_.mixture_;
 
-    return tmp<fvScalarMatrix>(nullptr);
+    // decide which phase this 'he' belongs to by name
+    // (matches your fields: he.phase1 / he.phase2)
+    const bool isPhase1 = (he.name().find("phase1") != string::npos);
+
+    tmp<volScalarField> talphahe;
+
+    if (momentumTransport_.twoPhaseTransport_)
+    {
+        if (isPhase1)
+        {
+            const rhoFluidMulticomponentThermo& thermo = mixture.thermo1();
+
+            talphahe =
+                mixture.alpha1()
+               *(
+                    thermo.kappa()
+                  + thermo.rho()*thermo.Cp()*momentumTransport_.momentumTransport1_->nut()
+                )
+               /thermo.Cpv();
+        }
+        else
+        {
+            const rhoFluidMulticomponentThermo& thermo = mixture.thermo2();
+
+            talphahe =
+                mixture.alpha2()
+               *(
+                    thermo.kappa()
+                  + thermo.rho()*thermo.Cp()*momentumTransport_.momentumTransport2_->nut()
+                )
+               /thermo.Cpv();
+        }
+    }
+    else
+    {
+        // single mixture turbulence model (same nut for both)
+        if (isPhase1)
+        {
+            const rhoFluidMulticomponentThermo& thermo = mixture.thermo1();
+
+            talphahe =
+                mixture.alpha1()
+               *(
+                    thermo.kappa()
+                  + thermo.rho()*thermo.Cp()*momentumTransport_.mixtureMomentumTransport_->nut()
+                )
+               /thermo.Cpv();
+        }
+        else
+        {
+            const rhoFluidMulticomponentThermo& thermo = mixture.thermo2();
+
+            talphahe =
+                mixture.alpha2()
+               *(
+                    thermo.kappa()
+                  + thermo.rho()*thermo.Cp()*momentumTransport_.mixtureMomentumTransport_->nut()
+                )
+               /thermo.Cpv();
+        }
+    }
+
+    // unityLewisFourier-style: divq(he) = -laplacian(alphahe, he)
+    // (here alphahe already includes the phase fraction alpha_i)
+    return -fvm::laplacian(talphahe(), he);
+
+
+
 }
     // * * * * * * * * * * * Mass Transfer * * * * * * * * * * * //
 

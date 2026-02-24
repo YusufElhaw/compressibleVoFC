@@ -117,8 +117,7 @@ protected:
         //- Kinetic energy field
         //  Used in the energy equation
         volScalarField K;
-
-
+    
     // Momentum transport
 
         //- Momentum transport model
@@ -139,6 +138,12 @@ protected:
 
         //- Phase-2 continuity error
         tmp<volScalarField::Internal> contErr2;
+
+        //- Phase-1 continuity error
+        tmp<volScalarField::Internal> contErrCpv1;
+
+        //- Phase-2 continuity error
+        tmp<volScalarField::Internal> contErrCpv2;
 
 
     // Protected Member Functions
