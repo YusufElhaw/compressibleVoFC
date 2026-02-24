@@ -65,7 +65,7 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
           IOobject::READ_IF_PRESENT, IOobject::NO_WRITE
         ),
         mesh,
-        dimensionedScalar("K", dimless, 1)
+        dimensionedScalar("K", dimless, 1e-2)
     );
 
     volScalarField K2
@@ -78,7 +78,7 @@ void Foam::solvers::compressibleVoFC::compositionPredictor()
           IOobject::READ_IF_PRESENT, IOobject::NO_WRITE
         ),
         mesh,
-        dimensionedScalar("K", dimless, 1)
+        dimensionedScalar("K", dimless, 1e-2)
     );
   // bounded alphas (ALPHA is equal to 0<=alpha<=1)
     volScalarField ALPHA1("ALPHA1", min(max(alpha1, scalar(0)), scalar(1)));
