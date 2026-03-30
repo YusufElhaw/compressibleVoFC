@@ -2,6 +2,7 @@ compressibleTwoPhaseVoFMixtureC/compressibleTwoPhaseVoFMixtureC.C
 compressibleInterPhaseTransportModelC/compressibleInterPhaseTransportModelC.C
 compressibleInterPhaseThermophysicalTransportModelC/compressibleInterPhaseThermophysicalTransportModelC.C
 massDiffusivity/massDiffusivity.C
+VLEConstant/VLEConstant.C
 
 compositionPredictor.C
 alphaSuSp.C

@@ -2,6 +2,7 @@ SOURCE += compressibleTwoPhaseVoFMixtureC/compressibleTwoPhaseVoFMixtureC.C
 SOURCE += compressibleInterPhaseTransportModelC/compressibleInterPhaseTransportModelC.C
 SOURCE += compressibleInterPhaseThermophysicalTransportModelC/compressibleInterPhaseThermophysicalTransportModelC.C
 SOURCE += massDiffusivity/massDiffusivity.C
+SOURCE += VLEConstant/VLEConstant.C
 
 SOURCE += compositionPredictor.C
 SOURCE += alphaSuSp.C

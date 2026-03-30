@@ -54,7 +54,8 @@ namespace Foam
 
 class massDiffusivity
 {
-    const compressibleInterPhaseTransportModelC& momentumTransport_;
+    public:
+    const compressibleInterPhaseTransportModelC& turbulence_;
     const compressibleTwoPhaseVoFMixtureC& mixture_;
 
     // parameters per-phase (read once)
@@ -63,7 +64,10 @@ class massDiffusivity
     scalar Let1_, Let2_;
 
     //  turbulence per-phase flags (read once)
-    bool is1turbulent_, is2turbulent_;
+    bool turb1_, turb2_;
+    
+    mutable volScalarField D1Eff_;
+    mutable volScalarField D2Eff_;
 
     // dictionaries (cached in registry)
     const IOdictionary& readThermophysicalTransportDict(const word& phaseName) const;
@@ -71,8 +75,18 @@ class massDiffusivity
     // checking from momentumTransport both Phases for turbulence
     bool checkPhaseTurbulence(const word& phaseName) const;
 
+    void updateD1Eff() const;
+    void updateD2Eff() const;
+
 public:
     massDiffusivity(const compressibleInterPhaseTransportModelC& turb);
+
+    tmp<volScalarField> D1Eff() const;
+    tmp<scalarField> D1Eff(const label patchi) const;
+
+    tmp<volScalarField> D2Eff() const;
+    tmp<scalarField> D2Eff(const label patchi) const;
+
 
     tmp<volScalarField> DEff() const;
     tmp<scalarField> DEff(const label patchi) const;
